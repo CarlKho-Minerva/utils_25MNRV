@@ -9,20 +9,23 @@ from visual_feedback import RecordingFeedback
 from config import HOLD_DURATION, KEY_TO_MONITOR, SHOW_VISUAL_FEEDBACK, AUTO_PASTE, KEEP_HISTORY
 
 class KeyboardMonitor:
-    def __init__(self):
+    def __init__(self, key_monitor=None):
         self.recorder = AudioRecorder()
         self.whisper = WhisperClient()
         self.key_press_time = 0
         self.is_recording = False
         self.listener = None
-        self.keyboard_controller = KeyboardController()  # For auto-pasting
+        self.keyboard_controller = KeyboardController()
+        
+        # Use provided key or default from config
+        self.key_to_monitor = key_monitor or KEY_TO_MONITOR
         
         # Initialize visual feedback if enabled
         self.feedback = RecordingFeedback() if SHOW_VISUAL_FEEDBACK else None
         
         # Store recent transcriptions
         self.recent_transcriptions = []
-        self.max_transcription_history = 10  # Save only the last 10
+        self.max_transcription_history = 10
         
         # For tracking progress during recording
         self.recording_start_time = 0
@@ -30,7 +33,7 @@ class KeyboardMonitor:
     def start_listening(self):
         """Start listening for keyboard events"""
         # Support various formats of key names
-        key_name = KEY_TO_MONITOR.lower()
+        key_name = self.key_to_monitor.lower()
         
         try:
             self.listener = keyboard.Listener(
@@ -55,8 +58,22 @@ class KeyboardMonitor:
     def on_press(self, key):
         """Handle key press events"""
         try:
-            # Check if the right shift key is pressed
-            if key == keyboard.Key.shift_r and not self.is_recording:
+            # Check if the monitored key is pressed
+            key_match = False
+            
+            # Get key name for comparison
+            if hasattr(key, 'char') and key.char:  # For character keys
+                key_name = key.char.lower()
+            elif hasattr(key, 'name') and key.name:  # For special keys
+                key_name = key.name.lower()
+            else:
+                return
+                
+            # Check if this is our monitored key
+            if key_name == self.key_to_monitor.lower():
+                key_match = True
+                
+            if key_match and not self.is_recording:
                 if self.key_press_time == 0:  # Initial press
                     self.key_press_time = time.time()
                     # Start a timer to check for hold duration
@@ -67,7 +84,21 @@ class KeyboardMonitor:
     def on_release(self, key):
         """Handle key release events"""
         try:
-            if key == keyboard.Key.shift_r:
+            # Get key name for comparison
+            key_match = False
+            
+            if hasattr(key, 'char') and key.char:
+                key_name = key.char.lower()
+            elif hasattr(key, 'name') and key.name:
+                key_name = key.name.lower()
+            else:
+                return
+                
+            # Check if this is our monitored key
+            if key_name == self.key_to_monitor.lower():
+                key_match = True
+            
+            if key_match:
                 self.key_press_time = 0
                 
                 # If recording, stop and process
