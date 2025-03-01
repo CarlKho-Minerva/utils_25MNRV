@@ -19,7 +19,7 @@ Made by [Carl Kho](https://www.linkedin.com/in/carlkho/)
 ## Requirements
 
 - Python 3.8+
-- FFmpeg (for audio processing)
+- FFmpeg (for audio processing) - [Download FFmpeg](https://ffmpeg.org/download.html) and add it to your system's PATH
 - OpenAI API key
 
 ## Installation
@@ -34,6 +34,7 @@ cd utils_25MNRV
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+                          # On Windows with Zsh: source venv/Scripts/activate
 ```
 
 3. Install dependencies:
@@ -44,6 +45,15 @@ pip install -r requirements.txt
 4. Create a `.env` file with your OpenAI API key:
 ```bash
 OPENAI_API_KEY=your-api-key-here
+```
+
+## Setup Virtual Environment
+
+To set up the virtual environment and install the required packages, run the following commands:
+
+```sh
+./setup_venv.sh  # On Windows PowerShell: .\setup_venv.sh
+                 # On Windows with Zsh: source ./setup_venv.sh
 ```
 
 ## Usage
