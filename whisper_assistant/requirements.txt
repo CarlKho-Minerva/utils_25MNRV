@@ -1,0 +1,9 @@
+pynput==1.7.6
+sounddevice==0.4.5
+# Use scipy without version pinning to get a compatible pre-built wheel
+scipy
+# Ensure compatible versions of OpenAI and HTTPX
+openai==1.3.0
+httpx>=0.24.1
+python-dotenv==1.0.0
+pyperclip==1.8.2
