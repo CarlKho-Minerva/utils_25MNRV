@@ -14,3 +14,7 @@ pywin32==306
 winshell==0.6
 # For Windows-specific functionality
 pypiwin32
+pystray==0.19.4
+Pillow>=9.0.0
+plyer
+pystray

@@ -5,12 +5,11 @@ from config import OPENAI_API_KEY, WHISPER_MODEL
 
 class WhisperClient:
     def __init__(self):
+        # Initialize the client only once to improve connection reuse
         try:
-            # Try the standard initialization
             self.client = OpenAI(api_key=OPENAI_API_KEY)
         except TypeError as e:
             if 'got an unexpected keyword argument' in str(e):
-                # Handle older HTTPX versions that don't support proxies
                 import httpx
                 http_client = httpx.Client()
                 self.client = OpenAI(
@@ -20,6 +19,10 @@ class WhisperClient:
             else:
                 raise
         
+        # Cache latest results to reduce API calls for identical audio
+        self.cache = {}
+        self.cache_max_size = 5
+            
     def transcribe_audio(self, audio_file_path):
         """
         Transcribe audio file using OpenAI's Whisper API
@@ -28,6 +31,14 @@ class WhisperClient:
             if not os.path.exists(audio_file_path):
                 print(f"Audio file not found: {audio_file_path}")
                 return None
+                
+            # Get file size and modification time for cache key
+            stat = os.stat(audio_file_path)
+            cache_key = f"{audio_file_path}:{stat.st_size}:{stat.st_mtime}"
+            
+            # Check if we have this in cache
+            if cache_key in self.cache:
+                return self.cache[cache_key]
                 
             print("Transcribing audio...")
             with open(audio_file_path, "rb") as audio_file:
@@ -38,6 +49,14 @@ class WhisperClient:
             
             if response and hasattr(response, "text"):
                 transcription = response.text
+                
+                # Cache the result
+                self.cache[cache_key] = transcription
+                if len(self.cache) > self.cache_max_size:
+                    # Remove oldest item
+                    oldest_key = next(iter(self.cache))
+                    del self.cache[oldest_key]
+                
                 print(f"Transcription: {transcription}")
                 return transcription
             else:
@@ -53,10 +72,8 @@ class WhisperClient:
         Copy text to clipboard so it can be pasted - avoid triggering clipboard history
         """
         if text:
-            # Use pyperclip quietly
             try:
                 pyperclip.copy(text)
-                # Don't print message to avoid UI clutter
                 return True
             except Exception as e:
                 print(f"Error copying to clipboard: {str(e)}")

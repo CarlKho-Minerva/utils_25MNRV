@@ -1,6 +1,6 @@
-import threading
 import os
 from plyer import notification
+from config import APP_NAME
 
 class RecordingFeedback:
     def __init__(self):
@@ -13,9 +13,9 @@ class RecordingFeedback:
         try:
             notification.notify(
                 title="Recording",
-                message="🎤 Hold shift until done speaking",
-                app_name="Carl's Whisper",  # This sets the app name in the notification source
-                app_icon=None,              # Use default system icon instead of custom
+                message="🎤 Release shift when done speaking",
+                app_name=APP_NAME,  # Use configured app name
+                app_icon=None,
                 timeout=1
             )
         except Exception as e:
@@ -27,25 +27,30 @@ class RecordingFeedback:
         # Skip notification for processing to improve speed
         print("Processing audio...")
         
-    def show_ready(self, text):
+    def show_ready(self, text, length=0):
         """Show ready feedback with transcribed text"""
         self.status = "ready"
         self.last_text = text
         
-        # Create a shorter preview of the text
+        # Create a shorter preview
         preview = text[:30] + "..." if len(text) > 30 else text
         
+        # Add character count for longer texts
+        message = f"✅ {preview}"
+        if length > 50:
+            message += f" ({length} chars)"
+            
         try:
             notification.notify(
                 title="Transcribed",
-                message=f"✅ {preview}",
-                app_name="Carl's Whisper",  # This sets the app name in the notification source
-                app_icon=None,              # Use default system icon instead of custom
+                message=message,
+                app_name=APP_NAME,  # Use configured app name
+                app_icon=None,
                 timeout=1
             )
         except Exception as e:
-            print(f"Ready: {preview}")
+            print(f"Transcribed: {preview}")
         
     def close(self):
         """Clean up resources"""
-        pass  # No resources to clean up
+        pass

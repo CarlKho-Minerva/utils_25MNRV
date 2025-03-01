@@ -1,5 +1,6 @@
 import time
 import threading
+import pyperclip
 from pynput import keyboard
 from pynput.keyboard import Controller as KeyboardController, Key
 from audio_recorder import AudioRecorder
@@ -19,17 +20,27 @@ class KeyboardMonitor:
         # Initialize visual feedback if enabled
         self.feedback = RecordingFeedback() if SHOW_VISUAL_FEEDBACK else None
         
-        # Store the last transcription
-        self.last_transcription = ""
+        # Store recent transcriptions
+        self.recent_transcriptions = []
+        self.max_transcription_history = 10  # Save only the last 10
+        
+        # For tracking progress during recording
+        self.recording_start_time = 0
         
     def start_listening(self):
         """Start listening for keyboard events"""
-        self.listener = keyboard.Listener(
-            on_press=self.on_press,
-            on_release=self.on_release
-        )
-        self.listener.start()
-        print(f"Listening for {KEY_TO_MONITOR} key hold ({HOLD_DURATION} seconds)...")
+        # Support various formats of key names
+        key_name = KEY_TO_MONITOR.lower()
+        
+        try:
+            self.listener = keyboard.Listener(
+                on_press=self.on_press,
+                on_release=self.on_release
+            )
+            self.listener.start()
+            print(f"Listening for {key_name} key hold ({HOLD_DURATION} seconds)...")
+        except Exception as e:
+            print(f"Error starting keyboard listener: {e}")
         
     def stop_listening(self):
         """Stop the keyboard listener"""
@@ -89,25 +100,34 @@ class KeyboardMonitor:
     def _process_transcription(self, audio_file):
         """Process transcription in a separate thread"""
         try:
-            # Transcribe audio - no processing notification to speed things up
+            # Start timer to measure performance
+            start_time = time.time()
+            
+            # Transcribe audio
             transcription = self.whisper.transcribe_audio(audio_file)
             
             if transcription:
-                # Store the transcription
-                self.last_transcription = transcription
+                # Performance measurement
+                processing_time = time.time() - start_time
+                total_time = time.time() - self.recording_start_time
+                print(f"Processing took {processing_time:.2f}s (total: {total_time:.2f}s)")
+                
+                # Store in history
+                self.recent_transcriptions.append(transcription)
+                if len(self.recent_transcriptions) > self.max_transcription_history:
+                    self.recent_transcriptions.pop(0)  # Remove oldest
                 
                 # Copy to clipboard silently
-                self.whisper.paste_text(transcription)
+                pyperclip.copy(transcription)
                 
                 if AUTO_PASTE:
-                    # Immediately paste without delay
-                    # Use direct keyboard typing to avoid clipboard history
+                    # Use direct keyboard typing for fastest response
                     self.keyboard_controller.type(transcription)
                     
-                # Only show notification after all actions are complete
+                # Only show notification after pasting is done
                 if self.feedback:
                     try:
-                        self.feedback.show_ready(transcription)
+                        self.feedback.show_ready(transcription, len(transcription))
                     except Exception as e:
                         pass
         except Exception as e:
@@ -123,6 +143,7 @@ class KeyboardMonitor:
             # Key held long enough, start recording
             if not self.is_recording:
                 self.is_recording = True
+                self.recording_start_time = time.time()  # Track when recording started
                 
                 # Show recording feedback safely
                 if self.feedback:
@@ -134,6 +155,6 @@ class KeyboardMonitor:
                 self.recorder.start_recording()
         else:
             # Check again after a short delay
-            timer = threading.Timer(0.1, self._check_hold_duration)
+            timer = threading.Timer(0.05, self._check_hold_duration)  # More responsive
             timer.daemon = True
             timer.start()
