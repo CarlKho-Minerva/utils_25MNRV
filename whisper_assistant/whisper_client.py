@@ -50,10 +50,15 @@ class WhisperClient:
             
     def paste_text(self, text):
         """
-        Copy text to clipboard so it can be pasted
+        Copy text to clipboard so it can be pasted - avoid triggering clipboard history
         """
         if text:
-            pyperclip.copy(text)
-            print("Text copied to clipboard. Press Ctrl+V to paste.")
-            return True
+            # Use pyperclip quietly
+            try:
+                pyperclip.copy(text)
+                # Don't print message to avoid UI clutter
+                return True
+            except Exception as e:
+                print(f"Error copying to clipboard: {str(e)}")
+                return False
         return False

@@ -15,9 +15,9 @@ class AudioRecorder:
         self.recording = True
         self.audio_data = []
         self.record_thread = threading.Thread(target=self._record)
+        self.record_thread.daemon = True  # Make thread daemon so it exits with main program
         self.record_thread.start()
-        print("Recording started...")
-
+        
     def stop_recording(self):
         """Stop the audio recording and save to a file"""
         if self.recording:
