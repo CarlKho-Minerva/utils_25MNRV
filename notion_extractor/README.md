@@ -39,12 +39,3 @@ If you encounter any issues:
 1. Run `python main.py --setup` to verify your configuration
 2. Check that the database is shared with your integration
 3. Verify your API key in the `.env` file
-
-## Cleanup Instructions
-
-After setting up this new version, you can safely delete these old files:
-- notion_db_extractor.py
-- notion_db_extractor_README.md
-- extract_ah110_db.py
-- fix_sharing_issue.py
-- notion_integration_guide.md

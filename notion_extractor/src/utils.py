@@ -9,12 +9,12 @@ def extract_database_id_from_url(url):
     """Extract database ID from a Notion URL"""
     if not url:
         return None
-    
+
     # Try to extract using regex pattern for 32-character hex string
     match = re.search(r'([a-f0-9]{32})', url)
     if match:
         return match.group(1)
-    
+
     # Alternative extraction from URL path
     parts = url.split('/')
     for part in parts:
@@ -23,7 +23,7 @@ def extract_database_id_from_url(url):
             if '-' in db_id_part:
                 db_id = db_id_part.split('-')[-1]
                 return db_id
-    
+
     return None
 
 def save_entries_to_files(entries, output_name=None):
@@ -31,21 +31,21 @@ def save_entries_to_files(entries, output_name=None):
     if not output_name:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_name = f"notion_extract_{timestamp}"
-    
+
     # Ensure we have the .json extension
     if not output_name.endswith('.json'):
         json_path = f"{output_name}.json"
     else:
         json_path = output_name
         output_name = output_name[:-5]  # Remove .json for the base name
-    
+
     # Create text file path
     txt_path = f"{output_name}.txt"
-    
+
     # Save JSON file
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(entries, f, indent=2, ensure_ascii=False)
-    
+
     # Save text file
     with open(txt_path, 'w', encoding='utf-8') as f:
         for i, entry in enumerate(entries):
@@ -57,18 +57,18 @@ def save_entries_to_files(entries, output_name=None):
             f.write("-"*50 + "\n")
             f.write(entry.get('body', 'No content') + "\n\n")
             f.write("="*50 + "\n\n")
-    
+
     return json_path, txt_path
 
 def verify_setup():
     """Verify the setup is correct and guide the user if needed"""
     from dotenv import load_dotenv
-    
+
     # Load environment variables
     load_dotenv()
-    
+
     print("\n===== Notion Extractor Setup Verification =====\n")
-    
+
     # Check API key
     api_key = os.environ.get('NOTION_API_KEY')
     if not api_key:
@@ -77,7 +77,7 @@ def verify_setup():
         return False
     else:
         print("✅ API key found in .env file")
-    
+
     # Check database ID
     db_id = os.environ.get('DEFAULT_DATABASE_ID')
     if not db_id:
@@ -85,7 +85,7 @@ def verify_setup():
         print("   You'll need to provide the database ID manually")
     else:
         print(f"✅ Default database ID found: {db_id}")
-    
+
     # Guide on sharing with integration
     print("\n----- Sharing with Integration -----")
     print("To properly share your Notion database with the integration:")
@@ -93,7 +93,7 @@ def verify_setup():
     print("2. Click the '...' menu in the top-right corner")
     print("3. Select 'Add connections'")
     print("4. Find and select 'mnrv_db_reader'")
-    
+
     # Ask if they want to open the database
     print("\nWould you like to open your Notion database now? (y/n)")
     choice = input().lower()
@@ -104,7 +104,7 @@ def verify_setup():
         else:
             webbrowser.open("https://www.notion.so/")
             print("Opening Notion...")
-    
+
     print("\nSetup verification complete!\n")
     return True
 
